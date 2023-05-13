@@ -12,7 +12,7 @@ cd k8s_practice/kubespray/inventory
 cp -r s000 s056570
 cd s056570
 ```
-edit inventory
+edit *inventory.ini*
 ```
 master-1.s056570.slurm.io ansible_host=172.16.232.2 ip=172.16.232.2
 master-2.s056570.slurm.io ansible_host=172.16.232.3 ip=172.16.232.3
@@ -43,23 +43,27 @@ ingress-1.s056570.slurm.io
 kube_node
 kube_control_plane
 ```
-edit group_vars/k8s_cluster/k8s-cluster.yml
+edit *group_vars/k8s_cluster/k8s-cluster.yml*
 ```
 kube_network_plugin: flannel
 kube_proxy_mode: iptables
 cluster_name: s056570.local
 kube_version: v1.21.4
 ```
-edit group_vars/k8s_cluster/k8s-net-flannel.yml
+edit *group_vars/k8s_cluster/k8s-net-flannel.yml*
 ```
 flannel_interface_regexp: '172\\.16\\.232\\.\\d{1,3}'
 ```
 *Отключить установку ingress*  
-edit group_vars/k8s_cluster/addons
+edit *group_vars/k8s_cluster/addons*
 ```
 ingress_nginx_enabled: false
 ```
-edit deploy_cluster.sh
+edit *k8s_practice/kubespray/_deploy_cluster.sh*
 ```
 ansible-playbook -u "$1" -i inventory/s056570/inventory.ini cluster.yml -b --diff
+```
+### Запуск установки куба
+```
+bash _deploy_cluster.sh s056570
 ```
