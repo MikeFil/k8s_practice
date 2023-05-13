@@ -59,3 +59,6 @@ edit group_vars/k8s_cluster/addons
 ingress_nginx_enabled: false
 ```
 edit deploy_cluster.sh
+```
+ansible-playbook -u "$1" -i inventory/s056570/inventory.ini cluster.yml -b --diff
+```
