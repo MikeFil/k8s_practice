@@ -48,6 +48,7 @@ edit group_vars/k8s_cluster/k8s-cluster.yml
 kube_network_plugin: flannel
 kube_proxy_mode: iptables
 cluster_name: s056570.local
+kube_version: v1.21.4
 ```
 edit group_vars/k8s_cluster/k8s-net-flannel.yml
 ```
