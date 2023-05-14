@@ -67,3 +67,35 @@ ansible-playbook -u "$1" -i inventory/s056570/inventory.ini cluster.yml -b --dif
 ```
 bash _deploy_cluster.sh s056570
 ```
+
+Подготовка серевеа gitlab
+
+проверка yum-utils
+yum install yum-utils
+
+установка docker и docker-compose
+yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+yum install docker-ce docker-ce-cli containerd.io -y
+systemctl enable --now docker
+curl -L "https://github.com/docker/compose/releases/download/1.28.6/docker-compose-Linux-x86_64" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+
+клонирование проекта
+mkdir gitlab && cd gitlab/
+git clone git@gitlab.slurm.io:edu/workshop.git
+
+включение swap
+dd if=/dev/zero of=/swapfile count=4096 bs=1MiB
+ls -lh /swapfile
+сhmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+
+установка gitlub и runner
+yum install -y curl policycoreutils-python perl
+curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.rpm.sh | sudo bash
+curl -L "https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.rpm.sh" | sudo bash
+yum install gitlab-ce
+yum install gitlab-runner
+systemctl enable gitlab-runner --now
