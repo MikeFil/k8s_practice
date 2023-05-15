@@ -1,4 +1,5 @@
 *readme.md of tot-kot/k8s_practice*  
+# 1.2 Развернуть кластер Kubernetes с помощью Kubespray
 Kubespray взят с репо SouthBridgeio https://github.com/southbridgeio/kubespray  
 ### Минимальные требования
 Для установки master'ов нужны 2GB RAM, для запуска node достаточно 1GB RAM.  
@@ -89,7 +90,128 @@ ansible-playbook -u "$1" -i inventory/s056570/inventory.ini cluster.yml -b --dif
 bash _deploy_cluster.sh s056570
 ```
 
-### Удаление кластера
+### Удаление кластера, если что-то пошло не по плану
 ```
 ansible-playbook -u "s056570" -i inventory/s056570/inventory.ini reset.yml -b --diff
+```
+
+# 1.3 Установить Helm, Nginx Ingress Controller и Cert-manager
+## Helm
+```
+cd k8s_practice/helm
+
+# Установка repo с Helm
+sudo yum install http://rpms.southbridge.ru/southbridge-rhel7-stable.rpm -y
+
+# Установка Helm v3.6.3
+sudo yum install helm -y
+
+# Добавление repo для Helm
+helm repo add stable https://charts.helm.sh/stable
+helm repo add jetstack https://charts.jetstack.io/
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+
+# Загружаем values для ingress-nginx
+helm show values ingress-nginx/ingress-nginx > nginx-values.yaml
+```
+
+edit *nginx-values.yaml*
+```
+  hostNetwork: true
+  tolerations:
+    - key: "node-role.kubernetes.io/ingress"
+      operator: "Exists"
+  nodeSelector:
+    node-role.kubernetes.io/ingress: ""
+```
+
+Устанавливаем ingress-nginx 
+```
+helm install ingress-nginx ingress-nginx/ingress-nginx -f nginx-values.yaml
+```
+
+## Cert-manager
+```
+cd k8s_practice/cert-manager
+
+# Установка CRDS сущностей для работы с сертификатами
+kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.7.1/cert-manager.crds.yaml
+
+# Создадим namespace для Cert-manager
+kubectl create namespace cert-manager
+
+# Установим Cert-manager с помощью Helm
+helm install cert-manager \
+ --namespace cert-manager \
+ --version v1.7.1 \
+ --set ingressShim.defaultIssuerName=letsencrypt \
+ --set ingressShim.defaultIssuerKind=ClusterIssuer \
+ jetstack/cert-manager
+
+# Проверим 3 запущенных пода
+kubectl -n cert-manager get pod
+```
+#### Создаем два манифеста
+*clusterissuer-stage.yaml*
+```
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt
+spec:
+  acme:
+    # You must replace this email address with your own.
+    # Let's Encrypt will use this to contact you about expiring
+    # certificates, and issues related to your account.
+    email: slurm_k8s_du_3@mail.ru
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      # Secret resource used to store the account's private key.
+      name: stage-issuer-account-key
+    # Enable the HTTP01 challenge mechanism for this Issuer
+    solvers:
+    - http01:
+        ingress:
+          class:  nginx
+```
+*tls-ingress.yaml*
+```
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-ingress-nginx
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: letsencrypt
+spec:
+  rules:
+  - host: my.s056570.edu.slurm.io
+    http:
+      paths:
+      - pathType: ImplementationSpecific
+        backend:
+          service:
+            name: my-service
+            port:
+              number: 80
+  tls:
+  - hosts:
+    - my.s056570.edu.slurm.io
+    secretName: my-tls
+```
+Для тестового stage существующий e-mail указывать нет необходимости  
+Значения полей '- host(s)' нужно поменять на существующий dns адрес по которому будет доступен ingress
+
+```
+# Применяем манифесты cert-manager
+kubectl apply -f clusterissuer-stage.yaml
+kubectl apply -f tls-ingress.yaml -n default
+
+# Проверяем созданный сертификат и секреты
+kubectl get certificate my-tls -o yaml
+kubectl get secret my-tls -o yaml
+
+# Убедимся, что сертификат подписан stage CA от letsencrypt
+curl https://my.s056570.edu.slurm.io -k -v
 ```
