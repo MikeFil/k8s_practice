@@ -1,13 +1,14 @@
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: my-ingress-nginx
+  name: flask-ingress-nginx
   annotations:
     kubernetes.io/ingress.class: "nginx"
     cert-manager.io/cluster-issuer: letsencrypt
 spec:
   rules:
-  - host: my.s056570.edu.slurm.io
+  - host: flask.s056570.edu.slurm.io
     http:
       paths:
       - pathType: ImplementationSpecific
@@ -18,5 +19,6 @@ spec:
               number: 80
   tls:
   - hosts:
-    - my.s056570.edu.slurm.io
-    secretName: my-tls
+    - flask.s056570.edu.slurm.io
+    secretName: flask-tls
+...

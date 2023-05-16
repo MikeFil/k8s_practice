@@ -180,13 +180,13 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: my-ingress-nginx
+  name: flask-ingress-nginx
   annotations:
     kubernetes.io/ingress.class: "nginx"
     cert-manager.io/cluster-issuer: letsencrypt
 spec:
   rules:
-  - host: my.s056570.edu.slurm.io
+  - host: flask.s056570.edu.slurm.io
     http:
       paths:
       - pathType: ImplementationSpecific
@@ -197,21 +197,20 @@ spec:
               number: 80
   tls:
   - hosts:
-    - my.s056570.edu.slurm.io
-    secretName: my-tls
+    - flask.s056570.edu.slurm.io
+    secretName: flask-tls
 ```
 Для тестового stage существующий e-mail указывать нет необходимости  
 Значения полей '- host(s)' нужно поменять на существующий dns адрес по которому будет доступен ingress
-
 ```
 # Применяем манифесты cert-manager
 kubectl apply -f clusterissuer-stage.yaml
 kubectl apply -f tls-ingress.yaml -n default
 
 # Проверяем созданный сертификат и секреты
-kubectl get certificate my-tls -o yaml
-kubectl get secret my-tls -o yaml
+kubectl get certificate flask-tls -o yaml
+kubectl get secret flask-tls -o yaml
 
 # Убедимся, что сертификат подписан stage CA от letsencrypt
-curl https://my.s056570.edu.slurm.io -k -v
+curl https://flask.s056570.edu.slurm.io -k -v
 ```
