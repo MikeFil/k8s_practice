@@ -1,0 +1,58 @@
+apiVersion:  apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ .Chart.Name }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    component: app
+  name: {{ .Release.Name }}
+spec:
+  progressDeadlineSeconds: 180
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      release: {{ .Release.Name }}
+      component: app
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  revisionHistoryLimit: 5
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: {{ .Chart.Name }}
+        release: {{ .Release.Name }}
+        component: app
+    spec:
+      containers:
+      - env:
+        {{- range $key, $val := .Values.env }}
+        - name: {{ $key | quote }}
+          value: {{ $val | quote }}
+        {{- end }}
+        {{- range $key, $val := .Values.envSecret }}
+        - name: {{ $key | quote }}
+          valueFrom:
+            secretKeyRef:
+              key: {{ $key | lower | replace "_" "-" }}
+              name: {{ $val }}
+        {{- end }}
+        image: {{ .Values.image }}:{{ .Values.imageTag}}
+        imagePullPolicy: IfNotPresent
+        name: app
+        ports:
+        - containerPort: {{ .Values.service.app_port }}
+          name: http
+          protocol: TCP
+        resources:
+{{ toYaml .Values.resources | indent 12 }}
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecret }}
