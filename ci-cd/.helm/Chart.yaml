@@ -1,0 +1,9 @@
+description: Practice flask app Helm chart for Kubernetes.
+home: https://slurm.io/
+maintainers:
+- email: TeamC@slurm.io
+  name: Team C
+name: app
+sources:
+- https://gitlab.s056570.edu.slurm.io/s056570/application
+version: 1.0.0
