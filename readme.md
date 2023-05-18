@@ -155,6 +155,7 @@ kubectl -n cert-manager get pod
 #### Создаем два манифеста
 *clusterissuer-stage.yaml*
 ```
+---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -174,9 +175,11 @@ spec:
     - http01:
         ingress:
           class:  nginx
+...
 ```
 *tls-ingress.yaml*
 ```
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -199,6 +202,7 @@ spec:
   - hosts:
     - flask.s056570.edu.slurm.io
     secretName: flask-tls
+...
 ```
 Для тестового stage существующий e-mail указывать нет необходимости  
 Значения полей '- host(s)' нужно поменять на существующий dns адрес по которому будет доступен ingress
